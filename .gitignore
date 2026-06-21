@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data/cache/
+data/persist/
+output/
+.DS_Store
+*.csv
+*.parquet

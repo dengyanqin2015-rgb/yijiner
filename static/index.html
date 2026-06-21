@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>一进二 · AI决策系统</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--gold:#ffd700;--green:#3fb950;--red:#f85149;--blue:#58a6ff;--text:#e6edf3;--dim:#8b949e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:600px;margin:0 auto;padding-bottom:70px}
+.header{text-align:center;padding:16px 12px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:10}
+.header h1{font-size:20px;color:var(--gold)}.header .sub{font-size:11px;color:var(--dim);margin-top:2px}
+.tab-bar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:10;max-width:600px;margin:0 auto}
+.tab{flex:1;text-align:center;padding:10px 4px;font-size:11px;color:var(--dim);cursor:pointer;transition:.2s}
+.tab.active{color:var(--gold);border-top:2px solid var(--gold);margin-top:-1px}
+.tab .icon{font-size:18px;display:block;margin-bottom:2px}
+.content{padding:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.card h3{font-size:14px;color:var(--gold);margin-bottom:8px}
+.stat-row{display:flex;gap:8px;flex-wrap:wrap}
+.stat{flex:1;min-width:60px;background:#0d1117;padding:10px 8px;border-radius:8px;text-align:center}
+.stat .val{font-size:22px;font-weight:bold;color:var(--blue)}
+.stat .lbl{font-size:10px;color:var(--dim);margin-top:2px}
+.pick-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;cursor:pointer}
+.pick-row:last-child{border-bottom:0}
+.pick-rank{font-size:18px;font-weight:bold;color:var(--gold);width:28px;text-align:center}
+.pick-info{flex:1}.pick-code{font-size:15px;font-weight:bold}.pick-name{font-size:12px;color:var(--dim)}
+.pick-meta{text-align:right;font-size:12px}.pick-score{font-size:16px;font-weight:bold;color:var(--blue)}
+.pick-detail{font-size:11px;color:var(--dim)}
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;margin:1px}
+.badge-buy{background:#3fb95022;color:var(--green)}.badge-sell{background:#f8514922;color:var(--red)}
+.chat-box{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.chat-msgs{max-height:400px;overflow-y:auto;padding:8px}
+.chat-msg{margin-bottom:8px;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap}
+.chat-msg.ai{background:var(--card);margin-right:30px}
+.chat-msg.user{background:#1a3a5c;margin-left:30px;text-align:right}
+.quick-btns{display:flex;flex-wrap:wrap;gap:6px;padding:8px}
+.quick-btn{background:var(--card);color:var(--blue);border:1px solid var(--border);padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer}
+.chat-input{display:flex;padding:8px;gap:8px;border-top:1px solid var(--border)}
+.chat-input input{flex:1;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px}
+.chat-input button{background:var(--gold);color:#000;border:none;border-radius:8px;padding:10px 16px;font-weight:bold;font-size:14px}
+.alert{border-left:3px solid var(--red);padding:8px 12px;margin:8px 0;background:#f8514922;border-radius:4px;font-size:12px}
+.alert.good{border-color:var(--green);background:#3fb95022}
+.pnl-pos{color:var(--green)}.pnl-neg{color:var(--red)}
+.empty{text-align:center;padding:40px;color:var(--dim);font-size:14px}
+.form-row{display:flex;gap:8px;margin:8px 0}.form-row input,.form-row button{padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text);font-size:13px}
+.form-row button{background:var(--gold);color:#000;border:none;font-weight:bold}
+.loading{text-align:center;padding:20px;color:var(--dim)}
+.hidden{display:none}
+@media(min-width:768px){.tab-bar{position:static;border-bottom:1px solid var(--border);border-top:0}.app{padding-bottom:0}.tab{font-size:13px}.content{padding:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🀄 一进二 · AI决策</h1>
+    <div class="sub" id="status-line">连接中...</div>
+  </div>
+
+  <!-- TAB 1: 仪表盘 -->
+  <div class="content" id="tab-dash">
+    <div id="dash-market"></div>
+    <div id="dash-zt"></div>
+    <div id="dash-tail"></div>
+    <div id="dash-loading" class="loading">加载中...</div>
+  </div>
+
+  <!-- TAB 2: 持仓 -->
+  <div class="content hidden" id="tab-positions">
+    <div id="pos-summary"></div>
+    <div id="pos-list"></div>
+    <div class="card">
+      <h3>➕ 录入交易</h3>
+      <div class="form-row">
+        <input id="add-code" placeholder="代码" style="width:80px">
+        <input id="add-price" placeholder="买入价" style="width:80px">
+        <input id="add-qty" placeholder="数量(股)" style="width:80px">
+        <button onclick="addHolding()">买入</button>
+      </div>
+      <div class="form-row">
+        <input id="sell-code" placeholder="代码" style="width:80px">
+        <button onclick="sellHolding()" style="background:var(--red);color:#fff">卖出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: AI对话 -->
+  <div class="content hidden" id="tab-chat">
+    <div class="chat-box">
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="askAI('今天买什么')">今天买什么</button>
+        <button class="quick-btn" onclick="askAI('怎么看持仓')">怎么看持仓</button>
+        <button class="quick-btn" onclick="askAI('什么时候卖')">什么时候卖</button>
+        <button class="quick-btn" onclick="askAI('策略规则')">策略规则</button>
+      </div>
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="chat-msg ai">你好！我是AI策略助手。<br>快速提问或输入股票代码分析。</div>
+      </div>
+      <div class="chat-input">
+        <input id="chat-input" placeholder="输入问题或股票代码..." onkeydown="if(event.key==='Enter')askAI()">
+        <button onclick="askAI()">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: 历史 -->
+  <div class="content hidden" id="tab-history">
+    <div id="history-stats"></div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- 底部导航 -->
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab(0)" id="tab-btn-0"><span class="icon">📊</span>仪表盘</div>
+  <div class="tab" onclick="switchTab(1)" id="tab-btn-1"><span class="icon">💼</span>持仓</div>
+  <div class="tab" onclick="switchTab(2)" id="tab-btn-2"><span class="icon">🤖</span>AI</div>
+  <div class="tab" onclick="switchTab(3)" id="tab-btn-3"><span class="icon">📋</span>历史</div>
+</div>
+
+<script>
+const API = '';
+let currentTab = 0;
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function switchTab(n) {
+  currentTab = n;
+  document.querySelectorAll('.content').forEach((el,i) => el.classList.toggle('hidden', i !== n));
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', i === n));
+  if (n === 0) refreshDash();
+  if (n === 1) refreshPositions();
+  if (n === 3) refreshHistory();
+}
+
+async function api(path) {
+  try {
+    const r = await fetch(API + path);
+    return await r.json();
+  } catch(e) {
+    return {error: '连接失败'};
+  }
+}
+
+// ======= 仪表盘 =======
+async function refreshDash() {
+  document.getElementById('dash-loading').classList.remove('hidden');
+  const data = await api('/api/scan');
+  document.getElementById('dash-loading').classList.add('hidden');
+  document.getElementById('status-line').textContent = `数据: ${data.time||'--'} | ${data.cached?'(缓存)':''}`;
+
+  // 市场情绪
+  const m = data.market || {};
+  const warn = m.warning ? `<div class="alert">⚠ ${m.warning}</div>` : '';
+  document.getElementById('dash-market').innerHTML = `
+    <div class="card">
+      <h3>📊 市场情绪</h3>
+      <div class="stat-row">
+        <div class="stat"><div class="val">${m.total_zt||0}</div><div class="lbl">涨停家数</div></div>
+        <div class="stat"><div class="val">${m.break_rate||0}%</div><div class="lbl">炸板率</div></div>
+        <div class="stat"><div class="val">${m.prev_premium||0}%</div><div class="lbl">昨日溢价</div></div>
+        <div class="stat"><div class="val">${m.sentiment||'-'}</div><div class="lbl">情绪</div></div>
+      </div>${warn}
+    </div>`;
+
+  // 打板精选
+  let ztHtml = '<div class="card"><h3>🎯 打板精选（竞价买入）</h3>';
+  const zt = data.zt_picks || [];
+  if (zt.length === 0) ztHtml += '<div class="empty">暂无候选</div>';
+  else zt.forEach((p,i) => {
+    ztHtml += `<div class="pick-row" >
+      <div class="pick-rank">${i+1}</div>
+      <div class="pick-info"><div class="pick-code">${p.code} ${p.name}</div><div class="pick-detail">封板${p.seal} | 换手${p.turnover}% | ${p.board}板</div></div>
+      <div class="pick-meta"><div class="pick-score">${p.score}</div><div class="pick-detail">预期+${p.expected}%</div></div>
+    </div>`;
+  });
+  ztHtml += '</div>';
+  document.getElementById('dash-zt').innerHTML = ztHtml;
+
+  // 尾盘精选
+  let tailHtml = '<div class="card"><h3>🌅 尾盘确认（14:50买入）</h3>';
+  const tail = data.tail_picks || [];
+  if (tail.length === 0) tailHtml += '<div class="empty">14:30后更新</div>';
+  else tail.forEach((t,i) => {
+    tailHtml += `<div class="pick-row">
+      <div class="pick-rank">${i+1}</div>
+      <div class="pick-info"><div class="pick-code">${t.code} ${t.name}</div><div class="pick-detail">${t.reason} | 涨幅${t.pct}%</div></div>
+      <div class="pick-meta"><div class="pick-score">${t.score}</div><div class="pick-detail">${t.buy_price}/${t.sell_price}</div></div>
+    </div>`;
+  });
+  tailHtml += '</div>';
+  document.getElementById('dash-tail').innerHTML = tailHtml;
+}
+
+// ======= 持仓 =======
+async function refreshPositions() {
+  const data = await api('/api/holdings');
+  const stats = await api('/api/stats');
+  document.getElementById('pos-summary').innerHTML = `
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat"><div class="val" style="color:${(data.total_return||0)>=0?'var(--green)':'var(--red)'}">${(data.total_return||0).toFixed(1)}%</div><div class="lbl">总收益</div></div>
+        <div class="stat"><div class="val">${data.cash||0}</div><div class="lbl">可用资金</div></div>
+        <div class="stat"><div class="val">${stats.win_rate||0}%</div><div class="lbl">胜率</div></div>
+        <div class="stat"><div class="val">${stats.total_pnl||0}</div><div class="lbl">累计盈亏</div></div>
+      </div>
+    </div>`;
+
+  const positions = data.positions || [];
+  let html = '<div class="card"><h3>💼 当前持仓</h3>';
+  if (positions.length === 0) html += '<div class="empty">暂无持仓</div>';
+  else positions.forEach(p => {
+    const cls = (p.pnl||0) >= 0 ? 'pnl-pos' : 'pnl-neg';
+    html += `<div class="pick-row">
+      <div class="pick-info"><div class="pick-code">${p.code} ${p.name}</div><div class="pick-detail">成本${p.buy_price} × ${p.quantity}股 | ${p.buy_date}</div></div>
+      <div class="pick-meta"><div style="font-size:16px">${(p.current_price||p.buy_price).toFixed(2)}</div><div class="${cls}">${(p.pnl_pct||0).toFixed(1)}% ${(p.pnl||0).toFixed(0)}元</div></div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('pos-list').innerHTML = html;
+}
+
+async function addHolding() {
+  const code = document.getElementById('add-code').value;
+  const price = parseFloat(document.getElementById('add-price').value);
+  const qty = parseInt(document.getElementById('add-qty').value);
+  if (!code || !price || !qty) return alert('请填写完整');
+  await fetch(API + '/api/holdings/add', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({code, name: '', price, quantity: qty})
+  });
+  refreshPositions();
+}
+
+async function sellHolding() {
+  const code = document.getElementById('sell-code').value;
+  if (!code) return alert('请输入代码');
+  const r = await fetch(API + `/api/holdings/sell?code=${encodeURIComponent(code)}`, {method:'POST'});
+  const d = await r.json();
+  alert(d.status === 'ok' ? `卖出成功！盈亏 ${d.pnl}元 (${d.pnl_pct}%)` : '未找到持仓');
+  refreshPositions();
+}
+
+// ======= AI对话 =======
+async function askAI(msg) {
+  const q = msg || document.getElementById('chat-input').value;
+  if (!q) return;
+  const msgs = document.getElementById('chat-msgs');
+  msgs.innerHTML += `<div class="chat-msg user">${q}</div>`;
+  document.getElementById('chat-input').value = '';
+  msgs.innerHTML += `<div class="chat-msg ai">思考中...</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  const r = await api('/api/ai?msg=' + encodeURIComponent(q));
+  msgs.lastElementChild.textContent = r.reply || '暂无回复';
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ======= 历史 =======
+async function refreshHistory() {
+  const trades = await api('/api/trades');
+  const stats = await api('/api/stats');
+  document.getElementById('history-stats').innerHTML = `
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat"><div class="val">${stats.total_trades||0}</div><div class="lbl">总交易</div></div>
+        <div class="stat"><div class="val">${stats.win_rate||0}%</div><div class="lbl">胜率</div></div>
+        <div class="stat"><div class="val">${stats.total_pnl||0}</div><div class="lbl">总盈亏</div></div>
+      </div>
+    </div>`;
+
+  let html = '<div class="card"><h3>📋 交易记录</h3>';
+  if (!trades.length) html += '<div class="empty">暂无记录</div>';
+  else trades.reverse().slice(0,30).forEach(t => {
+    const cls = t.type === 'buy' ? 'badge-buy' : (t.pnl > 0 ? 'badge-buy' : 'badge-sell');
+    html += `<div class="pick-row">
+      <div class="pick-info"><span class="badge ${cls}">${t.type==='buy'?'买':'卖'}</span> ${t.code} ${t.name||''}</div>
+      <div class="pick-meta" style="font-size:12px">${t.price} × ${t.quantity}股<br>${t.date} ${t.type==='sell'? '盈亏'+t.pnl+'元':''}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('history-list').innerHTML = html;
+}
+
+// 初始化
+refreshDash();
+setInterval(() => { if (currentTab === 0) refreshDash(); if (currentTab === 1) refreshPositions(); }, 30000);
+</script>
+</body>
+</html>
