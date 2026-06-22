@@ -3,309 +3,340 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>一进二 · AI决策</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<title>一进二</title>
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"><\/script>');}</script>
 <style>
-:root{--bg:#0d1117;--card:#161b22;--bdr:#30363d;--gold:#ffd700;--green:#3fb950;--red:#f85149;--blue:#58a6ff;--text:#e6edf3;--dim:#8b949e;--hdr:#010409}
+:root{--bg:#0a0e14;--card:#131820;--bdr:#1e2836;--gold:#f0c060;--green:#26a65b;--red:#e74c3c;--blue:#5dade2;--text:#c8cdd3;--dim:#6b7280}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
-.top-bar{display:flex;align-items:center;gap:12px;padding:6px 10px;background:var(--hdr);border-bottom:1px solid var(--bdr);font-size:11px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
-.top-bar .idx{font-weight:bold;color:var(--green)}.top-bar .idx.dn{color:var(--red)}
-.top-bar .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-.top-bar .dot.green{background:var(--green)}.top-bar .dot.yellow{background:var(--gold)}.top-bar .dot.red{background:var(--red)}
-.tabs{display:flex;border-bottom:1px solid var(--bdr);position:sticky;top:28px;background:var(--bg);z-index:99}
-.tab{flex:1;text-align:center;padding:8px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
-.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-.filters{display:flex;gap:4px;padding:6px 8px;flex-wrap:wrap;border-bottom:1px solid var(--bdr)}
-.filters button{padding:4px 10px;border-radius:12px;border:1px solid var(--bdr);background:var(--card);color:var(--dim);font-size:11px;cursor:pointer;white-space:nowrap}
-.filters button.on{background:var(--gold);color:#000;border-color:var(--gold)}
-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
-thead{position:sticky;top:56px;z-index:50}
-th{background:var(--card);padding:6px 3px;text-align:right;border-bottom:1px solid var(--bdr);color:var(--dim);font-weight:normal;cursor:pointer;white-space:nowrap}
-th:first-child,td:first-child{padding-left:6px;text-align:left}
-td{padding:5px 3px;text-align:right;border-bottom:1px solid var(--bdr);overflow:hidden;text-overflow:ellipsis}
-tr{cursor:pointer}.row:hover{background:#1a2332}.row.expanded{background:#1a2a3a}
-.row .code{color:var(--blue);font-weight:bold}.row .score{color:var(--gold)}.row .pct-up{color:var(--green)}.row .pct-dn{color:var(--red)}
-.expand{display:none}.expand.open{display:block}
-.chart-box{margin:8px;background:var(--card);border-radius:8px;overflow:hidden}
-.chart-box .chart{width:100%;height:320px}
-.period-bar{display:flex;gap:4px;padding:6px 10px}.period-bar button{padding:4px 12px;border-radius:4px;border:1px solid var(--bdr);background:var(--card);color:var(--dim);font-size:11px;cursor:pointer}.period-bar button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-.analysis{display:flex;gap:8px;padding:8px 10px;flex-wrap:wrap;border-top:1px solid var(--bdr)}
-.analysis .kv{padding:6px 10px;background:#0d1117;border-radius:6px;font-size:11px}.kv b{color:var(--blue)}
-.analysis .advice{flex:1;min-width:200px;padding:8px;border-left:3px solid var(--gold);font-size:12px}
-.watchlist-form{display:flex;gap:6px;padding:10px}.wl-form input{flex:1;padding:8px;background:#0d1117;border:1px solid var(--bdr);border-radius:6px;color:var(--text);font-size:13px}.wl-form button{padding:8px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:bold}
-.empty{text-align:center;padding:40px;color:var(--dim)}
-.holdings-card{margin:8px;padding:12px;background:var(--card);border-radius:8px}.holdings-card .hl{margin:4px 0;font-size:12px}
-.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center}.modal.open{display:flex}
-.modal .content{background:var(--card);border-radius:10px;padding:20px;max-width:400px;width:90%}.modal input{padding:8px;background:#0d1117;border:1px solid var(--bdr);border-radius:6px;color:var(--text);margin:4px 0;width:100%}.modal button{padding:8px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;margin-top:8px}
-.btn{padding:6px 12px;border-radius:4px;border:1px solid var(--bdr);background:var(--card);color:var(--dim);font-size:11px;cursor:pointer}.btn.primary{background:var(--gold);color:#000}.btn.danger{background:var(--red);color:#fff}
-@media(min-width:768px){body{max-width:800px;margin:auto}.tab{font-size:13px}}
+body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);font-size:13px;overflow-x:hidden}
+/* 顶部状态条 */
+#topbar{display:flex;align-items:center;gap:12px;padding:6px 14px;background:#05080c;border-bottom:1px solid var(--bdr);font-size:12px;flex-wrap:wrap;position:sticky;top:0;z-index:100;min-height:36px}
+#topbar .idx{font-weight:bold}#topbar .up{color:var(--green)}#topbar .dn{color:var(--red)}
+#topbar .state{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+.state.green{background:#26a65b22;color:var(--green)}.state.yellow{background:#f0c06022;color:var(--gold)}.state.red{background:#e74c3c22;color:var(--red)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}.dot.green{background:var(--green)}.dot.yellow{background:var(--gold)}.dot.red{background:var(--red)}
+
+/* 主体 */
+#main-wrap{display:flex;flex-direction:column;min-height:calc(100vh - 36px)}
+#left-panel{padding:10px 12px;overflow-y:auto}
+#right-panel{background:var(--card);border-top:1px solid var(--bdr);padding:0;display:none}
+#right-panel.open{display:block}
+
+/* 策略切换 */
+.strat-tabs{display:flex;gap:2px;margin-bottom:10px}
+.strat-tab{flex:1;text-align:center;padding:8px;border-radius:6px 6px 0 0;font-size:12px;cursor:pointer;background:var(--card);color:var(--dim);border:1px solid var(--bdr);border-bottom:0}
+.strat-tab.active{background:#1a2940;color:var(--gold);border-color:var(--gold)}
+
+/* 精选卡片 */
+.pick-card{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.pick-card:hover,.pick-card.selected{border-color:var(--gold)}
+.pick-card .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.pick-card .code{font-size:15px;font-weight:bold;color:var(--blue)}.pick-card .name{font-size:12px;color:var(--dim);margin-left:6px}
+.pick-card .score{font-size:20px;font-weight:bold;color:var(--gold)}
+.pick-card .meta{display:flex;gap:12px;font-size:11px;color:var(--dim);margin-bottom:6px;flex-wrap:wrap}
+.pick-card .meta span{white-space:nowrap}
+.pick-card .prices{display:flex;gap:12px;font-size:13px;flex-wrap:wrap}
+.pick-card .prices .p{display:flex;flex-direction:column;align-items:center}
+.pick-card .prices .plbl{font-size:10px;color:var(--dim)}.prices .buy{color:var(--blue);font-weight:bold}.prices .tp{color:var(--green)}.prices .sl{color:var(--red)}
+
+/* 持仓条 */
+#holdings-bar{padding:10px 12px;background:#05080c;border-top:1px solid var(--bdr);font-size:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+#holdings-bar .hp{padding:4px 10px;background:var(--card);border-radius:6px;font-size:11px}
+#holdings-bar .hp .pnl{font-weight:bold}
+
+/* 图表区 */
+.periods{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--bdr)}
+.periods button{padding:4px 12px;border-radius:4px;border:1px solid var(--bdr);background:var(--card);color:var(--dim);font-size:11px;cursor:pointer}
+.periods button.on{background:var(--blue);color:#fff}
+#chart-container{width:100%;height:380px}
+.chart-info{display:flex;gap:12px;padding:10px 12px;font-size:12px;color:var(--dim);flex-wrap:wrap;border-top:1px solid var(--bdr)}
+.chart-info b{color:var(--text)}
+.advice-bar{padding:10px 12px;border-top:1px solid var(--bdr);font-size:12px;background:#1a294022;line-height:1.6}
+
+/* 底部导航 */
+#bottom-nav{display:flex;border-top:1px solid var(--bdr);background:#05080c;position:sticky;bottom:0}
+#bottom-nav .bn{flex:1;text-align:center;padding:8px 4px;font-size:10px;color:var(--dim);cursor:pointer}
+#bottom-nav .bn.active{color:var(--gold)}
+
+/* 模态 */
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center}
+.modal.open{display:flex}.modal .mc{background:var(--card);border-radius:10px;padding:18px;max-width:360px;width:90%}
+.modal input{padding:8px;background:#0a0e14;border:1px solid var(--bdr);border-radius:6px;color:var(--text);margin:4px 0;width:100%;font-size:13px}
+.modal button{padding:8px 16px;background:var(--gold);color:#000;border:none;border-radius:6px;margin-top:8px;font-weight:bold}
+.btn-sm{padding:4px 10px;border-radius:4px;border:1px solid var(--bdr);background:var(--card);color:var(--dim);font-size:10px;cursor:pointer}
+.btn-sm.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-sm.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.empty{text-align:center;padding:36px;color:var(--dim);font-size:13px}
+
+/* ====== 桌面布局 ====== */
+@media(min-width:768px){
+  #main-wrap{flex-direction:row}
+  #left-panel{width:42%;max-width:480px;border-right:1px solid var(--bdr)}
+  #right-panel{display:block;flex:1;border-top:0;position:sticky;top:36px;align-self:flex-start;max-height:calc(100vh - 36px);overflow-y:auto}
+  #right-panel .periods{position:sticky;top:0;background:var(--card);z-index:5}
+  #chart-container{height:420px}
+  #bottom-nav{display:none}
+  #holdings-bar{position:sticky;bottom:0}
+  .pick-card{padding:10px 12px}
+  .pick-card .code{font-size:14px}
+}
+@media(min-width:1200px){
+  #chart-container{height:500px}
+}
 </style>
 </head>
 <body>
 <!-- 顶部状态条 -->
-<div class="top-bar" id="top-bar">加载中...</div>
+<div id="topbar">加载中...</div>
 
-<!-- Tab导航 -->
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('yijiner')">🎯 一进二</div>
-  <div class="tab" onclick="switchTab('double_peak')">🔍 双峰抄底</div>
-  <div class="tab" onclick="switchTab('watchlist')">⭐ 自选</div>
-  <div class="tab" onclick="switchTab('holdings')">💼 持仓</div>
-</div>
+<!-- 主体 -->
+<div id="main-wrap">
+  <!-- 左面板 -->
+  <div id="left-panel">
+    <div class="strat-tabs">
+      <div class="strat-tab active" onclick="switchStrat('yijiner')">🎯 一进二</div>
+      <div class="strat-tab" onclick="switchStrat('dp')">🔍 双峰抄底</div>
+    </div>
+    <div id="picks-list">加载中...</div>
+    <div id="picks-more"></div>
+  </div>
 
-<!-- 筛选条 -->
-<div class="filters" id="filters"></div>
-
-<!-- 主内容区 -->
-<div id="main"></div>
-
-<!-- 持仓录入弹窗 -->
-<div class="modal" id="modal-hl">
-  <div class="content">
-    <b>新增持仓</b>
-    <input id="m-code" placeholder="股票代码"><input id="m-price" placeholder="买入价"><input id="m-qty" placeholder="数量(股)">
-    <button onclick="addHolding()">确认</button><button class="btn" onclick="closeModal()">取消</button>
+  <!-- 右面板 -->
+  <div id="right-panel" class="open">
+    <div class="periods" id="periods"></div>
+    <div id="chart-container"></div>
+    <div class="chart-info" id="chart-stats"></div>
+    <div class="advice-bar" id="advice-bar"></div>
   </div>
 </div>
 
+<!-- 持仓条 -->
+<div id="holdings-bar">💼 持仓加载中...</div>
+
+<!-- 底部导航（手机） -->
+<div id="bottom-nav">
+  <div class="bn active" onclick="showMobileTab('picks')">🎯 精选</div>
+  <div class="bn" onclick="showMobileTab('chart')">📈 图表</div>
+  <div class="bn" onclick="showMobileTab('wl')">⭐ 自选</div>
+  <div class="bn" onclick="showMobileTab('pos')">💼 持仓</div>
+</div>
+
+<!-- 添加自选弹窗 -->
+<div class="modal" id="modal-wl"><div class="mc">
+  <b>添加自选</b>
+  <input id="wl-code-inp" placeholder="股票代码">
+  <input id="wl-name-inp" placeholder="名称(选填)">
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button onclick="addWL()">确认</button>
+    <button class="btn-sm" onclick="document.getElementById('modal-wl').classList.remove('open')">取消</button>
+  </div>
+  <div id="wl-list" style="margin-top:12px;font-size:12px;max-height:200px;overflow-y:auto"></div>
+</div></div>
+
+<!-- 添加持仓弹窗 -->
+<div class="modal" id="modal-pos"><div class="mc">
+  <b>新增持仓</b>
+  <input id="m-code" placeholder="股票代码"><input id="m-price" placeholder="买入价"><input id="m-qty" placeholder="数量(股)">
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button onclick="addHolding()">确认</button>
+    <button class="btn-sm" onclick="document.getElementById('modal-pos').classList.remove('open')">取消</button>
+  </div>
+</div></div>
+
 <script>
-const API='';let curTab='yijiner',curPeriod=60,expandedRow=null,chartInst=null;
+const API='';let curStrat='yijiner',selectedCode=null,chartInst=null,curPeriod=60,mobileTab='picks';
 
-// ====== 数据加载 ======
-async function get(path){try{const r=await fetch(API+path);return r.json();}catch(e){return{error:1}}}
-
-// ====== 顶部状态条 ======
-async function refreshTopBar(){
-  const d=await get('/api/market');
-  if(d.error){document.getElementById('top-bar').innerHTML='数据加载中...';return}
+// ====== 顶部状态 ======
+async function loadTopBar(){
+  const d=await get('/api/market');if(d.error)return;
   const sh=d.sh||{},sz=d.sz||{};
-  document.getElementById('top-bar').innerHTML=`
-    <span class="idx ${sh.pct>=0?'':'dn'}">上证 ${sh.price||'--'} ${(sh.pct||0)>=0?'+':''}${sh.pct||0}%</span>
-    <span class="idx ${sz.pct>=0?'':'dn'}">深证 ${sz.price||'--'} ${(sz.pct||0)>=0?'+':''}${sz.pct||0}%</span>
-    <span>涨停<b>${d.total_zt||0}</b>只 炸板${d.break_rate||0}% 溢价${(d.prev_premium||0)>=0?'+':''}${d.prev_premium||0}%</span>
-    <span class="dot ${d.state_color||'yellow'}"></span><b>${d.state||'--'}</b>
+  document.getElementById('topbar').innerHTML=`
+    <span class="idx ${sh.pct>=0?'up':'dn'}">上证 ${sh.price||'--'} ${(sh.pct||0)>=0?'+':''}${sh.pct||0}%</span>
+    <span class="idx ${sz.pct>=0?'up':'dn'}">深证 ${sz.price||'--'} ${(sz.pct||0)>=0?'+':''}${sz.pct||0}%</span>
+    <span>涨停<b>${d.total_zt||0}</b> 炸板${d.break_rate||0}% 溢价${(d.prev_premium||0)>=0?'+':''}${d.prev_premium}%</span>
+    <span class="state ${d.state_color||'yellow'}"><span class="dot ${d.state_color||'yellow'}"></span>${d.state||'--'}</span>
     <span style="margin-left:auto;font-size:10px;color:var(--dim)">${d.time||''}</span>`;
 }
+async function get(p){try{const r=await fetch(API+p);return r.json();}catch(e){return{error:1}}}
 
-// ====== Tab切换 ======
-function switchTab(tab){
-  curTab=tab;expandedRow=null;
-  document.querySelectorAll('.tab').forEach((el,i)=>{const tabs=['yijiner','double_peak','watchlist','holdings'];el.classList.toggle('active',tabs[i]===tab)});
-  loadTab();
-}
-async function loadTab(){
-  if(curTab==='yijiner'){renderFilters();await loadPool('yijiner')}
-  else if(curTab==='double_peak'){document.getElementById('filters').innerHTML='';await loadPool('double_peak')}
-  else if(curTab==='watchlist'){document.getElementById('filters').innerHTML='';await loadWatchlist()}
-  else if(curTab==='holdings'){document.getElementById('filters').innerHTML='';await loadHoldings()}
-}
+// ====== 精选列表 ======
+async function loadPicks(strat){
+  curStrat=strat;
+  document.querySelectorAll('.strat-tab').forEach((el,i)=>{el.classList.toggle('active',(i===0&&strat==='yijiner')||(i===1&&strat==='dp'))});
+  const endpoint=strat==='yijiner'?'/api/pool?strategy=yijiner':'/api/pool?strategy=double_peak';
+  const d=await get(endpoint);
+  if(d.error||!d.rows||d.rows.length===0){document.getElementById('picks-list').innerHTML='<div class="empty">暂无数据</div>';return}
+  const rows=d.rows.slice(0,15);
 
-// ====== 筛选按钮 ======
-const filterOpts={board:['全部','首板','2板','3板+'],time:['全部','<09:45','09:45-10:00','10:00-10:30'],price:['全部','<10元','10-20元','20-30元']};
-let curFilters={board:'全部',time:'全部',price:'全部'};
-function renderFilters(){
-  let h='';
-  for(const[k,opts]of Object.entries(filterOpts)){
-    h+=opts.map((o,i)=>`<button class="${(curFilters[k]||'全部')===o?'on':''}" onclick="setFilter('${k}','${o}')">${o}</button>`).join('');
-  }
-  document.getElementById('filters').innerHTML=h;
-}
-function setFilter(k,v){curFilters[k]=v;renderFilters();loadPool('yijiner')}
-function applyYijinerFilters(rows){
-  return rows.filter(r=>{
-    if(curFilters.board==='首板'&&r.board!==1)return false;
-    if(curFilters.board==='2板'&&r.board!==2)return false;
-    if(curFilters.board==='3板+'&&r.board<3)return false;
-    if(curFilters.price==='<10元'&&r.price>=10)return false;
-    if(curFilters.price==='10-20元'&&(r.price<10||r.price>=20))return false;
-    if(curFilters.price==='20-30元'&&(r.price<20||r.price>30))return false;
-    const seal=r.seal||'';
-    if(curFilters.time==='<09:45'&&seal>='094500')return false;
-    if(curFilters.time==='09:45-10:00'&&(seal<'094500'||seal>='100000'))return false;
-    if(curFilters.time==='10:00-10:30'&&(seal<'100000'||seal>='103000'))return false;
-    return true;
-  });
-}
-
-// ====== 股票池表格 ======
-async function loadPool(strategy){
-  const d=await get(`/api/pool?strategy=${strategy}`);
-  if(d.error||!d.rows){document.getElementById('main').innerHTML='<div class="empty">暂无数据</div>';return}
-  let rows=d.rows;
-  if(strategy==='yijiner')rows=applyYijinerFilters(rows);
-
-  if(strategy==='yijiner'){
-    const cols=['代码','名称','现价','预期%','封板','炸板','换手%','连板','主力净入','评分'];
-    document.getElementById('main').innerHTML=renderTable(rows,cols,['code','name','price','pct','seal','open_count','turnover','board','main_inflow','score'],strategy);
-  }else{
-    const cols=['代码','名称','现价','评分','底1','底2','间隔天','缩量%','60日线','目标','止损'];
-    document.getElementById('main').innerHTML=renderTable(rows,cols,['code','name','price','score','low_1','low_2','days_between','volume_shrink','ma60','target_price','stop_price'],strategy);
-  }
-}
-
-function renderTable(rows,cols,keys,strategy){
-  const widths=['60px','60px','55px','55px','55px','35px','50px','35px','65px','50px'];
-  let h='<table><thead><tr>';
-  cols.forEach((c,i)=>h+=`<th style="width:${widths[i]||'55px'}">${c}</th>`);
-  h+='</tr></thead><tbody>';
+  let html='';
   rows.forEach((r,i)=>{
-    const isExp=expandedRow===i;
-    h+=`<tr class="row ${isExp?'expanded':''}" onclick="toggleRow(${i},'${r.code}','${strategy}')">`;
-    keys.forEach((k,j)=>{
-      const v=r[k]!==undefined?r[k]:'';
-      if(j===0)h+=`<td class="code">${v}</td>`;
-      else if(k==='pct'||k==='score')h+=`<td class="${(v||0)>=0?'pct-up':'pct-dn'}">${typeof v==='number'?v.toFixed(1):v}</td>`;
-      else if(k==='main_inflow')h+=`<td class="${(v||0)>=0?'pct-up':'pct-dn'}">${v?(v/10000).toFixed(1)+'万':'-'}</td>`;
-      else if(k==='price'||k==='sell_price'||k==='buy_price'||k==='target_price'||k==='stop_price')h+=`<td>${typeof v==='number'?v.toFixed(2):v}</td>`;
-      else if(k==='turnover'||k==='volume_shrink')h+=`<td>${typeof v==='number'?v.toFixed(1):v}</td>`;
-      else h+=`<td>${v}</td>`;
-    });
-    h+='</tr>';
-    if(isExp)h+=`<tr class="expand open"><td colspan="${cols.length}"><div class="chart-box"><div class="period-bar">${[1,5,30,60,120,250].map(d=>`<button class="${curPeriod===d?'on':''}" onclick="event.stopPropagation();loadChart('${r.code}',${d})">${d===250?'年':d+'日'}</button>`).join('')}</div><div class="chart" id="chart-${i}"></div><div class="analysis" id="analysis-${i}"></div></div></td></tr>`;
+    const sel=r.code===selectedCode?' selected':'';
+    html+=`<div class="pick-card${sel}" onclick="selectPick('${r.code}',${i})" id="pick-${i}">
+      <div class="top">
+        <div><span class="code">${r.code}</span><span class="name">${r.name||''}</span></div>
+        <div class="score">${(r.score||0).toFixed(0)}</div>
+      </div>
+      <div class="meta">
+        ${r.seal?`<span>封板${r.seal}</span>`:''}
+        ${r.board?`<span>${r.board}板</span>`:''}
+        ${r.turnover?`<span>换手${r.turnover}%</span>`:''}
+        ${r.main_inflow?`<span style="color:${r.main_inflow>=0?'var(--green)':'var(--red)'}">主力${(r.main_inflow/10000).toFixed(1)}万</span>`:''}
+        ${r.days_between?`<span>双底${r.days_between}天</span>`:''}
+      </div>
+      <div class="prices">
+        <div class="p"><span class="plbl">买入</span><span class="buy">${(r.buy_price||r.price||0).toFixed(2)}</span></div>
+        <div class="p"><span class="plbl">止盈</span><span class="tp">${(r.sell_price||r.target_price||0).toFixed(2)}</span></div>
+        <div class="p"><span class="plbl">止损</span><span class="sl">${(r.stop_price||0).toFixed(2)}</span></div>
+        ${strat==='dp'&&r.low_1?`<div class="p"><span class="plbl">底1/底2</span><span>${r.low_1}/${r.low_2}</span></div>`:''}
+      </div>
+    </div>`;
   });
-  h+='</tbody></table>';
-  return h;
+  document.getElementById('picks-list').innerHTML=html;
+  if(rows.length>0&&!selectedCode)selectPick(rows[0].code,0);
+  if(selectedCode)loadChart(selectedCode,curPeriod);
+
+  // 桌面端自动打开右面板
+  if(window.innerWidth>=768)document.getElementById('right-panel').classList.add('open');
 }
 
-// ====== 行展开/收起 ======
-async function toggleRow(idx,code,strategy){
-  if(expandedRow===idx){expandedRow=null;loadPool(strategy);return}
-  expandedRow=idx;await loadPool(strategy);
-  await loadChart(code,curPeriod,`chart-${idx}`);
-  await loadAnalysis(code,`analysis-${idx}`);
+function switchStrat(s){selectedCode=null;loadPicks(s)}
+
+// ====== 选中 & K线 ======
+async function selectPick(code,idx){
+  selectedCode=code;
+  document.querySelectorAll('.pick-card').forEach(el=>el.classList.remove('selected'));
+  const card=document.getElementById('pick-'+idx);if(card)card.classList.add('selected');
+
+  // 手机端自动切到图表tab
+  if(window.innerWidth<768)showMobileTab('chart');
+  document.getElementById('right-panel').classList.add('open');
+
+  // 渲染时间段按钮
+  const periods=[1,5,30,60,120,250];
+  document.getElementById('periods').innerHTML=periods.map(d=>`<button class="${curPeriod===d?'on':''}" onclick="loadChart('${code}',${d})">${d===250?'年':d+'日'}</button>`).join('');
+
+  await loadChart(code,curPeriod);
+  await loadAdvice(code);
 }
 
-// ====== K线图 ======
-async function loadChart(code,days,containerId){
+async function loadChart(code,days){
   curPeriod=days;
-  const container=document.getElementById(containerId||'chart-0');
-  if(!container||container.clientWidth===0)return;
+  const periods=[1,5,30,60,120,250];
+  document.getElementById('periods').innerHTML=periods.map(d=>`<button class="${curPeriod===d?'on':''}" onclick="loadChart('${code}',${d})">${d===250?'年':d+'日'}</button>`).join('');
 
   const d=await get(`/api/chart/${code}?days=${days}`);
-  if(d.error){container.innerHTML='<div class="empty">K线数据加载失败</div>';return}
+  const container=document.getElementById('chart-container');
+  if(d.error||!d.ohlc){container.innerHTML='<div class="empty">数据加载中...</div>';return}
   if(chartInst)chartInst.dispose();
-
   chartInst=echarts.init(container);
+
   const dates=d.dates||[],ohlc=d.ohlc||[],vols=d.volumes||[];
-  const up=(i)=>ohlc[i]&&ohlc[i][1]>=ohlc[i][0];
+  const up=i=>ohlc[i]&&ohlc[i][1]>=ohlc[i][0];
   const candleData=ohlc.map((o,i)=>[o[0],o[3],o[2],o[1]]);
-  const volColors=vols.map((v,i)=>(up(i)?'#3fb95044':'#f8514944'));
-  const volBorders=vols.map((v,i)=>(up(i)?'#3fb950':'#f85149'));
 
   chartInst.setOption({
     animation:false,
-    grid:[{left:50,right:10,top:15,height:'55%'},{left:50,right:10,top:'75%',height:'18%'}],
-    xAxis:[{data:dates,gridIndex:0,axisLabel:{fontSize:9,color:'#8b949e'}},
-           {data:dates,gridIndex:1,axisLabel:{show:false}}],
-    yAxis:[{scale:true,gridIndex:0,axisLabel:{fontSize:9,color:'#8b949e'},splitLine:{lineStyle:{color:'#21262d'}}},
-           {gridIndex:1,axisLabel:{fontSize:9,color:'#8b949e'},splitLine:{show:false}}],
+    grid:[{left:48,right:12,top:10,height:'58%'},{left:48,right:12,top:'74%',height:'18%'}],
+    xAxis:[{data:dates,gridIndex:0,axisLabel:{fontSize:8,color:'#6b7280'}},{data:dates,gridIndex:1,axisLabel:{show:false}}],
+    yAxis:[{scale:true,gridIndex:0,axisLabel:{fontSize:8,color:'#6b7280'},splitLine:{lineStyle:{color:'#1e2836'}}},{gridIndex:1,axisLabel:{fontSize:8,color:'#6b7280'},splitLine:{show:false}}],
     series:[
-      {type:'candlestick',data:candleData,itemStyle:{color:'#f85149',color0:'#3fb950',borderColor:'#f85149',borderColor0:'#3fb950'},xAxisIndex:0,yAxisIndex:0},
+      {type:'candlestick',data:candleData,itemStyle:{color:'#e74c3c',color0:'#26a65b',borderColor:'#e74c3c',borderColor0:'#26a65b'},xAxisIndex:0,yAxisIndex:0},
       {type:'line',data:d.ma5||[],smooth:true,lineStyle:{width:1,color:'#fff'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
-      {type:'line',data:d.ma10||[],smooth:true,lineStyle:{width:1,color:'#ffd700'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
+      {type:'line',data:d.ma10||[],smooth:true,lineStyle:{width:1,color:'#f0c060'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
       {type:'line',data:d.ma20||[],smooth:true,lineStyle:{width:1,color:'#da70d6'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
-      {type:'line',data:d.ma60||[],smooth:true,lineStyle:{width:1,color:'#3fb950'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
-      {type:'bar',data:vols,itemStyle:{color:params=>volColors[params.dataIndex],borderColor:params=>volBorders[params.dataIndex],borderWidth:1},xAxisIndex:1,yAxisIndex:1},
+      {type:'line',data:d.ma60||[],smooth:true,lineStyle:{width:1,color:'#26a65b'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
+      {type:'bar',data:vols,itemStyle:{color:params=>up(params.dataIndex)?'#26a65b44':'#e74c3c44',borderColor:params=>up(params.dataIndex)?'#26a65b':'#e74c3c',borderWidth:1},xAxisIndex:1,yAxisIndex:1}
     ],
-    tooltip:{trigger:'axis',axisPointer:{type:'cross'}},
+    tooltip:{trigger:'axis',axisPointer:{type:'cross'}}
   });
 
-  // 区间统计
   const st=d.stats||{};
-  container.parentElement.querySelector('.analysis')||container.parentElement.appendChild(document.createElement('div'));
-  const statsEl=container.parentElement.querySelector('.analysis');
-  if(statsEl)statsEl.innerHTML=`<div class="kv">区间<b>${st.days||days}</b>天</div><div class="kv">最高<b style="color:#f85149">${st.period_high||'-'}</b></div><div class="kv">最低<b style="color:#3fb950">${st.period_low||'-'}</b></div><div class="kv">均价<b>${st.period_avg||'-'}</b></div>`;
+  document.getElementById('chart-stats').innerHTML=`
+    <span>区间<b>${st.days||days}</b>天</span>
+    <span>最高<b style="color:#e74c3c">${st.period_high||'-'}</b></span>
+    <span>最低<b style="color:#26a65b">${st.period_low||'-'}</b></span>
+    <span>均价<b>${st.period_avg||'-'}</b></span>
+    <span>最新<b>${d.latest_price||'-'}</b></span>`;
 }
 
-// ====== 个股分析 ======
-async function loadAnalysis(code,containerId){
-  const el=document.getElementById(containerId||'analysis-0');
-  if(!el)return;
+async function loadAdvice(code){
   const d=await get(`/api/stock/${code}`);
-  if(d.error){el.innerHTML='分析失败';return}
-  const adv=d.advice||{};
-  el.innerHTML=`
-    <div class="kv">趋势<b>${d.trend||'?'}</b></div>
-    <div class="kv">60日位<b>${d.position_60||'?'}%</b></div>
-    <div class="kv">主力<b style="color:${(d.fund_flow?.main_net||0)>=0?'var(--green)':'var(--red)'}">${d.fund_flow?.main_net?((d.fund_flow.main_net/10000).toFixed(1)+'万'):'-'}</b></div>
-    <div class="kv">策略<b>${(d.strategies||[]).join('/')||'?'}</b></div>
-    <div class="advice"><b>${adv.action||'?'}</b><br>买${adv.buy_price||'?'} | 卖${adv.sell_price||'?'} | 止损${adv.stop_price||'?'}</div>`;
+  if(d.error){document.getElementById('advice-bar').innerHTML='分析中...';return}
+  const adv=d.advice||{},ff=d.fund_flow||{};
+  document.getElementById('advice-bar').innerHTML=`
+    <b>${d.trend||'?'}势</b> | 60日位置${d.position_60||'?'}% |
+    主力${ff.main_net?((ff.main_net/10000).toFixed(1)+'万'):'-'} |
+    策略:${(d.strategies||[]).join('/')}
+    <br><b style="color:var(--gold)">${adv.action||''}</b>
+    &nbsp;买<b style="color:var(--blue)">${adv.buy_price||'-'}</b>
+    卖<b style="color:var(--green)">${adv.sell_price||'-'}</b>
+    止损<b style="color:var(--red)">${adv.stop_price||'-'}</b>`;
 }
 
-// ====== 自选股 ======
-async function loadWatchlist(){
+// ====== 持仓条 ======
+async function loadHoldingsBar(){
+  const d=await get('/api/holdings');
+  const pos=d.positions||[];
+  let h='💼 ';
+  if(pos.length===0)h+='暂无持仓 ';
+  else pos.forEach(p=>{h+=`<span class="hp">${p.code} ${(p.current_price||p.buy_price).toFixed(2)} <span class="pnl" style="color:${(p.pnl||0)>=0?'var(--green)':'var(--red)'}">${(p.pnl_pct||0)>=0?'+':''}${p.pnl_pct}%</span></span>`;});
+  h+=`<span class="hp">总收益<span style="color:${(d.total_return||0)>=0?'var(--green)':'var(--red)'};font-weight:bold">${(d.total_return||0)>=0?'+':''}${d.total_return}%</span></span>`;
+  h+=` <button class="btn-sm primary" onclick="document.getElementById('modal-pos').classList.add('open')">+持仓</button>`;
+  document.getElementById('holdings-bar').innerHTML=h;
+
+  // 预警闪烁
+  const alerts=await get('/api/alerts');
+  if(alerts.length>0){
+    const a=alerts[0];
+    document.getElementById('topbar').style.background=a.type==='止损'?'#e74c3c22':'#26a65b22';
+  }
+}
+
+// ====== 自选（弹窗内） ======
+async function loadWL(){
   const wl=await get('/api/watchlist');
   const stocks=wl.stocks||[];
-  let h='<div class="wl-form"><input id="wl-code" placeholder="股票代码"><input id="wl-name" placeholder="名称(可选)" style="flex:1"><button onclick="addWL()">+ 添加</button><button class="btn" onclick="analyzeWL()">🔍 分析全部</button></div>';
-  if(stocks.length===0)h+='<div class="empty">暂无自选股，添加后定时分析</div>';
-  else{
-    h+='<table><thead><tr><th>代码</th><th>名称</th><th>添加日</th><th>操作</th></tr></thead><tbody>';
-    stocks.forEach(s=>h+=`<tr><td class="code" onclick="showStock('${s.code}')">${s.code}</td><td>${s.name||'-'}</td><td>${s.added}</td><td><button class="btn danger" onclick="event.stopPropagation();removeWL('${s.code}')">删除</button></td></tr>`);
-    h+='</tbody></table>';
-    h+='<div id="wl-results"></div>';
-  }
-  document.getElementById('main').innerHTML=h;
+  let h='';
+  if(stocks.length===0)h='<div class="empty" style="padding:12px">暂无自选</div>';
+  else stocks.forEach(s=>h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr)"><span style="cursor:pointer;color:var(--blue)" onclick="selectPick('${s.code}',-1);document.getElementById('modal-wl').classList.remove('open')">${s.code} ${s.name||'-'}</span><button class="btn-sm danger" onclick="removeWL('${s.code}')">删</button></div>`);
+  document.getElementById('wl-list').innerHTML=h;
 }
 async function addWL(){
-  const code=document.getElementById('wl-code').value, name=document.getElementById('wl-name').value;
+  const code=document.getElementById('wl-code-inp').value,name=document.getElementById('wl-name-inp').value;
   if(!code)return;
-  await fetch(API+`/api/watchlist/add?code=${code}&name=${name}`,{method:'POST'});
-  loadWatchlist();
+  await fetch(API+`/api/watchlist/add?code=${code}&name=${name}`,{method:'POST'});loadWL();
 }
-async function removeWL(code){await fetch(API+`/api/watchlist/remove?code=${code}`,{method:'POST'});loadWatchlist();}
-async function analyzeWL(){
-  document.getElementById('wl-results').innerHTML='<div class="empty">分析中...</div>';
-  const d=await get('/api/analyze/watchlist');
-  if(d.results){let h='<table><tr><th>代码</th><th>趋势</th><th>现价</th><th>策略</th><th>建议</th></tr>';d.results.forEach(r=>h+=`<tr><td class="code">${r.code}</td><td>${r.trend||'?'}</td><td>${r.latest_price||'?'}</td><td>${(r.strategies||[]).join('/')}</td><td>${(r.advice||{}).action||'?'}</td></tr>`);h+='</table>';document.getElementById('wl-results').innerHTML=h;}
-}
+async function removeWL(code){await fetch(API+`/api/watchlist/remove?code=${code}`,{method:'POST'});loadWL();}
 
-// ====== 持仓 ======
-async function loadHoldings(){
-  const hd=await get('/api/holdings');
-  let h=`<div style="padding:8px;display:flex;gap:8px"><button class="btn primary" onclick="document.getElementById('modal-hl').classList.add('open')">+ 新增持仓</button><button class="btn" onclick="analyzeHoldings()">🔍 分析持仓</button></div>`;
-  const pos=hd.positions||[];
-  h+=`<div class="holdings-card"><b>总资产</b> ${(hd.total_value||0)+(hd.cash||0)>0?((hd.total_value||0)+(hd.cash||0)).toFixed(0):'3000'}元 | 收益<span style="color:${(hd.total_return||0)>=0?'var(--green)':'var(--red)'}">${(hd.total_return||0)>=0?'+':''}${hd.total_return||0}%</span> | 可用${hd.cash||0}元</div>`;
-  if(pos.length===0)h+='<div class="empty">暂无持仓</div>';
-  else{
-    h+='<table><thead><tr><th>代码</th><th>名称</th><th>成本</th><th>现价</th><th>盈亏%</th><th>操作</th></tr></thead><tbody>';
-    pos.forEach(p=>h+=`<tr onclick="showStock('${p.code}')"><td class="code">${p.code}</td><td>${p.name||'-'}</td><td>${p.buy_price}</td><td>${(p.current_price||p.buy_price).toFixed(2)}</td><td class="${(p.pnl||0)>=0?'pct-up':'pct-dn'}">${(p.pnl_pct||0)>=0?'+':''}${p.pnl_pct||0}%</td><td><button class="btn danger" onclick="event.stopPropagation();sellHolding('${p.code}')">卖出</button></td></tr>`);
-    h+='</tbody></table>';
-  }
-  h+='<div id="hd-results"></div>';
-  document.getElementById('main').innerHTML=h;
-}
+// ====== 持仓（弹窗内操作） ======
 async function addHolding(){
   const code=document.getElementById('m-code').value,price=parseFloat(document.getElementById('m-price').value),qty=parseInt(document.getElementById('m-qty').value);
-  await fetch(API+'/api/holdings/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,price,quantity:qty,name:''})});
-  closeModal();loadHoldings();
+  if(!code||!price||!qty)return;
+  // 自动获取名称
+const qd=await get(`/api/quote?codes=${code}`);const q=qd.quotes||{};const qn=q[code]||{};
+await fetch(API+'/api/holdings/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,price,quantity:qty,name:qn.name||''})});
+  document.getElementById('modal-pos').classList.remove('open');loadHoldingsBar();
 }
-async function sellHolding(code){await fetch(API+`/api/holdings/sell?code=${code}`,{method:'POST'});loadHoldings();}
-async function analyzeHoldings(){
-  document.getElementById('hd-results').innerHTML='<div class="empty">分析中...</div>';
-  const d=await get('/api/analyze/holdings');
-  if(d.results){let h='';d.results.forEach(r=>{const a=r.advice||{};h+=`<div class="holdings-card"><b>${r.code}</b> ${r.trend||'?'} | ${a.action||'?'} | 止损${a.stop_price||'?'}</div>`;});document.getElementById('hd-results').innerHTML=h;}
-}
-function closeModal(){document.getElementById('modal-hl').classList.remove('open')}
+async function sellHolding(code){await fetch(API+`/api/holdings/sell?code=${code}`,{method:'POST'});loadHoldingsBar();}
 
-// ====== 快捷查看 ======
-async function showStock(code){
-  expandedRow=-1;
-  document.getElementById('main').innerHTML=`<div style="padding:10px"><b>${code}</b> 加载中...</div>`;
-  const d=await get(`/api/stock/${code}`);
-  if(d.error){document.getElementById('main').innerHTML+='<div class="empty">加载失败</div>';return}
-  const adv=d.advice||{};
-  document.getElementById('main').innerHTML=`
-    <div class="chart-box"><div class="period-bar">${[1,5,30,60,120,250].map(d=>`<button class="${curPeriod===d?'on':''}" onclick="curPeriod=${d};loadChart('${code}',${d},'chart-pop')">${d===250?'年':d+'日'}</button>`).join('')}</div><div class="chart" id="chart-pop" style="height:300px"></div></div>
-    <div class="analysis" id="analysis-pop"></div>`;
-  await loadChart(code,curPeriod,'chart-pop');
-  await loadAnalysis(code,'analysis-pop');
+// ====== 手机Tab切换 ======
+function showMobileTab(tab){
+  mobileTab=tab;
+  document.querySelectorAll('#bottom-nav .bn').forEach((el,i)=>{el.classList.toggle('active',['picks','chart','wl','pos'][i]===tab)});
+  if(tab==='picks'){document.getElementById('left-panel').style.display='block';document.getElementById('right-panel').classList.remove('open')}
+  else if(tab==='chart'){document.getElementById('left-panel').style.display='none';document.getElementById('right-panel').classList.add('open')}
+  else if(tab==='wl'){document.getElementById('modal-wl').classList.add('open');loadWL()}
+  else if(tab==='pos'){document.getElementById('modal-pos').classList.add('open')}
 }
 
-// ====== 初始化 ======
-refreshTopBar();loadTab();
-setInterval(refreshTopBar,30000);
-setInterval(()=>{if(curTab==='yijiner'||curTab==='double_peak')loadTab();},30000);
+// ====== 启动 ======
+loadTopBar();loadPicks('yijiner');loadHoldingsBar();
+setInterval(loadTopBar,60000);
+setInterval(()=>{loadPicks(curStrat);loadHoldingsBar()},60000);
+
+// 窗口大小变化时重绘
+window.addEventListener('resize',()=>{if(chartInst&&selectedCode)chartInst.resize()});
 </script>
 </body>
 </html>

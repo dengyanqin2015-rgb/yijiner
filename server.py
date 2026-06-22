@@ -540,12 +540,13 @@ async def api_alerts():
     return alerts
 
 
-# ===================== 定时推送任务 =====================
+# ===================== 定时推送任务（延迟启动） =====================
 
 def _scheduled_push():
-    """后台定时推送"""
+    """后台定时推送 - 启动后等5分钟再开始"""
+    time.sleep(300)  # 先等5分钟让服务器完全就绪
     while True:
-        time.sleep(1800)  # 30分钟
+        time.sleep(1800)
         url = _read_webhook_url()
         if not url: continue
         try:
@@ -553,14 +554,16 @@ def _scheduled_push():
             if not wl.get("stocks"): continue
             lines = ["📊 定时分析 " + _now()]
             for s in wl["stocks"][:5]:
-                resp = requests.get(f"http://localhost:{os.environ.get('PORT', 8899)}/api/stock/{s['code']}", timeout=30)
-                a = resp.json()
-                adv = a.get("advice", {})
-                lines.append(f"{s['code']} {a.get('latest_price', '?')} {a.get('trend', '?')} → {adv.get('action', '?')}")
+                try:
+                    resp = requests.get(f"http://localhost:{os.environ.get('PORT', 8899)}/api/stock/{s['code']}", timeout=30)
+                    a = resp.json()
+                    adv = a.get("advice", {})
+                    lines.append(f"{s['code']} {a.get('latest_price', '?')} {a.get('trend', '?')} → {adv.get('action', '?')}")
+                except: pass
             requests.post(url, json={"msgtype": "text", "text": {"content": "\n".join(lines)}}, timeout=10)
         except: pass
 
-threading.Thread(target=_scheduled_push, daemon=True).start()
+_scheduled_started = False
 
 
 # ===================== 主页 =====================
@@ -571,6 +574,13 @@ async def root(): return FileResponse(str(STATIC_DIR / "index.html"))
 @app.get("/health")
 async def health(): return {"status": "ok", "time": datetime.now().isoformat()}
 
+@app.on_event("startup")
+async def startup():
+    global _scheduled_started
+    if not _scheduled_started:
+        _scheduled_started = True
+        threading.Thread(target=_scheduled_push, daemon=True).start()
+
+
 if __name__ == "__main__":
-    from data.cache import DataCache; DataCache()
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8899)))
