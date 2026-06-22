@@ -147,15 +147,6 @@ def _fetch_pool_yijiner():
         except: row["main_inflow"] = 0
         rows.append(row)
 
-    # 多信号融合：检查双峰池是否有重合
-    try:
-        dp_codes = {r["code"] for r in _fetch_pool_double_peak().get("rows", [])}
-        for row in rows:
-            if row["code"] in dp_codes:
-                row["score"] = min(100, row["score"] + 8)
-                row["fusion"] = True
-    except: pass
-
     return {"strategy": "一进二", "count": len(rows), "rows": rows, "time": _now()}
 
 
@@ -174,15 +165,6 @@ def _fetch_pool_double_peak():
             row["main_inflow"] = ff.get("main_net", 0)
         except: row["main_inflow"] = 0
         rows.append(row)
-
-    # 多信号融合
-    try:
-        yj_codes = {r["code"] for r in _fetch_pool_yijiner().get("rows", [])}
-        for row in rows:
-            if row["code"] in yj_codes:
-                row["score"] = min(100, row["score"] + 8)
-                row["fusion"] = True
-    except: pass
 
     return {"strategy": "双峰抄底", "count": len(rows), "rows": rows, "time": _now()}
 
@@ -213,6 +195,23 @@ async def api_pool(strategy: str = "yijiner"):
         if strategy == "yijiner": return _cached("pool_yijiner", _fetch_pool_yijiner)
         elif strategy == "double_peak": return _cached("pool_dp", _fetch_pool_double_peak)
         elif strategy == "all": return _cached("pool_all", _fetch_pool_all)
+        elif strategy == "fusion":
+            yj = _cached("pool_yijiner", _fetch_pool_yijiner)
+            dp = _cached("pool_dp", _fetch_pool_double_peak)
+            yj_codes = {r["code"] for r in yj.get("rows", [])}
+            dp_codes = {r["code"] for r in dp.get("rows", [])}
+            both = yj_codes & dp_codes
+            fusion_rows = []
+            for r in yj.get("rows", []) + dp.get("rows", []):
+                if r["code"] in both:
+                    r = dict(r); r["score"] = min(100, r["score"] + 10); r["fusion"] = True
+                    fusion_rows.append(r)
+            # 去重
+            seen = set(); unique = []
+            for r in fusion_rows:
+                if r["code"] not in seen: seen.add(r["code"]); unique.append(r)
+            unique.sort(key=lambda r: r["score"], reverse=True)
+            return {"strategy": "双策略共振(高置信)", "count": len(unique), "rows": unique, "time": _now()}
         return {"error": "unknown strategy"}
     except Exception as e:
         return {"error": str(e), "time": _now()}
@@ -243,8 +242,9 @@ async def api_chart(code: str, days: int = 60):
         prefix = "sh" if code.startswith("6") else "sz"
         start = (datetime.now() - timedelta(days=days + 10)).strftime("%Y%m%d")
         end = _today()
-        kline = ak.stock_zh_a_daily(symbol=f"{prefix}{code}", start_date=start, end=end, adjust="qfq")
-        if kline.empty: return {"error": "无数据", "code": code}
+        raw = ak.stock_zh_a_daily(symbol=f"{prefix}{code}", start_date=start, end=end, adjust="qfq")
+        if raw.empty: return {"error": "无数据", "code": code}
+        kline = raw.rename(columns={"date":"日期","open":"开盘","close":"收盘","high":"最高","low":"最低","volume":"成交量"})
 
         if len(kline) > days + 5:
             kline = kline.iloc[-(days + 5):]
@@ -300,8 +300,10 @@ async def api_stock(code: str):
         code = str(code).zfill(6)
         prefix = "sh" if code.startswith("6") else "sz"
         start = (datetime.now() - timedelta(days=120)).strftime("%Y%m%d")
-        kline = ak.stock_zh_a_daily(symbol=f"{prefix}{code}", start_date=start, end_date=_today(), adjust="qfq")
-        if kline.empty: return {"error": "无数据"}
+        raw = ak.stock_zh_a_daily(symbol=f"{prefix}{code}", start_date=start, end_date=_today(), adjust="qfq")
+        if raw.empty: return {"error": "无数据"}
+        # Sina列名英→中
+        kline = raw.rename(columns={"date":"日期","open":"开盘","close":"收盘","high":"最高","low":"最低","volume":"成交量"})
 
         close = kline["收盘"].values.astype(float)
         high_arr = kline["最高"].values.astype(float)
