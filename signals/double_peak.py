@@ -71,8 +71,9 @@ def find_double_bottom(kline: pd.DataFrame) -> dict | None:
 
 
 def scan(capital: float = 3000.0) -> list[DipPick]:
-    """扫描全市场双底形态"""
+    """扫描全市场双底形态 - 先粗筛再精查，避免限流"""
     import akshare as ak
+    import time as _time
 
     try:
         spot = ak.stock_zh_a_spot_em()
@@ -83,25 +84,27 @@ def scan(capital: float = 3000.0) -> list[DipPick]:
         return []
 
     spot["代码"] = spot["代码"].astype(str).str.zfill(6)
-    # 主板only
     spot = spot[~spot["代码"].str.startswith(("300", "301", "688", "689", "920", "8", "4"))]
     spot = spot[~spot["名称"].str.contains("ST|退|N", na=False)]
 
-    for col in ["最新价", "涨跌幅"]:
+    for col in ["最新价", "涨跌幅", "换手率"]:
         spot[col] = pd.to_numeric(spot[col], errors="coerce")
     spot = spot[(spot["最新价"] >= 3) & (spot["最新价"] <= 25)]
     spot = spot.dropna(subset=["最新价"])
 
-    picks = []
+    # 粗筛：优先低涨幅+低换手（可能是筑底形态）
+    spot["rank"] = spot["涨跌幅"].rank() * 0.5 + spot["换手率"].rank() * 0.5
+    candidates = spot.sort_values("rank").head(150)  # 只查150只
 
-    for _, row in spot.head(800).iterrows():
+    picks = []
+    for _, row in candidates.iterrows():
         code = row["代码"]
         name = str(row["名称"])
         price = float(row["最新价"])
 
         try:
             prefix = "sh" if code.startswith("6") else "sz"
-            kline = ak.stock_zh_a_daily(symbol=f"{prefix}{code}",
+            kline = ak.stock_zh_a_hist(symbol=code, period="daily",
                                         start_date=(datetime.now() - timedelta(days=120)).strftime("%Y%m%d"),
                                         end_date=datetime.now().strftime("%Y%m%d"), adjust="qfq")
             if kline.empty or len(kline) < 30:
@@ -109,42 +112,65 @@ def scan(capital: float = 3000.0) -> list[DipPick]:
         except Exception:
             continue
 
-        result = find_double_bottom(kline)
-        if result is None:
-            continue
+        # 少量延迟防限流
+        _time.sleep(0.15)
 
-        close_arr = kline["收盘"].values
+        result = find_double_bottom(kline)
+        close_arr = kline["收盘"].values.astype(float)
         ma60 = np.mean(close_arr[-60:]) if len(close_arr) >= 60 else np.mean(close_arr)
 
-        # 必须在60日均线下方
-        if price > ma60 * 0.95:
-            continue
-
-        # 打分
+        # 放宽：即使没检测到完美双底，只要低位缩量就算
         score = 0
-        score += min(40, (1 - result["volume_shrink"]) * 40)  # 缩量越明显分越高
-        score += min(20, result["days_between"] / 2)            # 双底间隔够大
-        score += min(20, (ma60 - price) / price * 100)          # 距均线越远弹性越大
-        score += 20 if price > result["low_2"] * 1.02 else 10   # 确认回升
-
         buy_price = round(price * 1.002, 2)
         target_price = round(ma60, 2)
-        stop_price = round(result["low_2"] * 0.98, 2)
+        stop_price = round(price * 0.95, 2)
 
-        score = min(100, score)
-        if score < 55:
+        if result:
+            score += 35
+            score += min(20, (1 - result["volume_shrink"]) * 20)
+            score += min(15, result["days_between"] / 3)
+            stop_price = round(result["low_2"] * 0.98, 2)
+            reason = f"双底间隔{result['days_between']}天，缩量{result['volume_shrink']*100:.0f}%"
+            low1, low2 = round(result["low_1"], 2), round(result["low_2"], 2)
+            vs = round(result["volume_shrink"] * 100, 1)
+            db_days = result["days_between"]
+        else:
+            # 没有完美双底，但股价在低位且有反弹迹象
+            if price > ma60 * 1.05:
+                continue
+            pos = (price - min(close_arr[-60:])) / (max(close_arr[-60:]) - min(close_arr[-60:])) if max(close_arr[-60:]) != min(close_arr[-60:]) else 0.5
+            if pos > 0.35:  # 不在低位
+                continue
+
+            # 最近3天有没有阳线
+            recent_3 = close_arr[-3:]
+            up_days = sum(1 for i in range(1, len(recent_3)) if recent_3[i] > recent_3[i-1])
+            if up_days < 1:
+                continue
+
+            score += 15
+            score += min(20, (1 - pos) * 20)
+            score += up_days * 10
+            reason = f"低位筑底(位置{pos*100:.0f}%)，近3日{up_days}阳"
+            low1 = round(min(close_arr[-60:]), 2)
+            low2 = price
+            vs = 0
+            db_days = 0
+
+        score += min(15, (ma60 - price) / price * 60)
+        if score < 35:
             continue
 
         picks.append(DipPick(
-            code=code, name=name, score=round(score, 1),
+            code=code, name=name, score=round(min(100, score), 1),
             price=price, buy_price=buy_price,
             target_price=target_price, stop_price=stop_price,
-            low_1=round(result["low_1"], 2), low_2=round(result["low_2"], 2),
+            low_1=low1, low_2=low2,
             ma60=round(ma60, 2),
-            volume_shrink=round(result["volume_shrink"] * 100, 1),
-            days_between_lows=result["days_between"],
-            reason=f"双底间隔{result['days_between']}天，缩量{result['volume_shrink']*100:.0f}%",
+            volume_shrink=vs,
+            days_between_lows=db_days,
+            reason=reason,
         ))
 
     picks.sort(key=lambda p: p.score, reverse=True)
-    return picks[:20]
+    return picks[:30]
