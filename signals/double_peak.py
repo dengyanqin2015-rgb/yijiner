@@ -104,11 +104,14 @@ def scan(capital: float = 3000.0) -> list[DipPick]:
 
         try:
             prefix = "sh" if code.startswith("6") else "sz"
-            kline = ak.stock_zh_a_hist(symbol=code, period="daily",
-                                        start_date=(datetime.now() - timedelta(days=120)).strftime("%Y%m%d"),
-                                        end_date=datetime.now().strftime("%Y%m%d"), adjust="qfq")
-            if kline.empty or len(kline) < 30:
+            raw = ak.stock_zh_a_daily(symbol=f"{prefix}{code}",
+                                       start_date=(datetime.now() - timedelta(days=120)).strftime("%Y%m%d"),
+                                       end_date=datetime.now().strftime("%Y%m%d"), adjust="qfq")
+            if raw.empty or len(raw) < 30:
                 continue
+            # Sina列名英→中映射
+            kline = raw.rename(columns={"date": "日期", "open": "开盘", "close": "收盘",
+                                         "high": "最高", "low": "最低", "volume": "成交量"})
         except Exception:
             continue
 

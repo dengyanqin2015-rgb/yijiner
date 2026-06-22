@@ -146,6 +146,16 @@ def _fetch_pool_yijiner():
             row["main_inflow"] = ff.get("main_net", 0)
         except: row["main_inflow"] = 0
         rows.append(row)
+
+    # 多信号融合：检查双峰池是否有重合
+    try:
+        dp_codes = {r["code"] for r in _fetch_pool_double_peak().get("rows", [])}
+        for row in rows:
+            if row["code"] in dp_codes:
+                row["score"] = min(100, row["score"] + 8)
+                row["fusion"] = True
+    except: pass
+
     return {"strategy": "一进二", "count": len(rows), "rows": rows, "time": _now()}
 
 
@@ -164,6 +174,16 @@ def _fetch_pool_double_peak():
             row["main_inflow"] = ff.get("main_net", 0)
         except: row["main_inflow"] = 0
         rows.append(row)
+
+    # 多信号融合
+    try:
+        yj_codes = {r["code"] for r in _fetch_pool_yijiner().get("rows", [])}
+        for row in rows:
+            if row["code"] in yj_codes:
+                row["score"] = min(100, row["score"] + 8)
+                row["fusion"] = True
+    except: pass
+
     return {"strategy": "双峰抄底", "count": len(rows), "rows": rows, "time": _now()}
 
 
@@ -311,6 +331,10 @@ async def api_stock(code: str):
             if latest < ma60v and pos < 30: strategies.append("超跌反弹")
             else: strategies.append("暂无匹配策略")
 
+        # ATR动态止损
+        from signals.risk_utils import calc_atr, dynamic_stop_loss, dynamic_take_profit, score_to_position, fuse_signals
+        atr_val = calc_atr(high_arr, low_arr, close)
+
         # 建议
         if trend == "上升":
             buy_p = round(latest * 0.99, 2); sell_p = round(latest * 1.05, 2)
@@ -326,16 +350,23 @@ async def api_stock(code: str):
             sell_p = round(ma60v if latest < ma60v else latest * 1.03, 2)
             action = "震荡区间，低吸高抛"
 
-        stop_loss = round(buy_p * 0.95, 2)
+        stop_loss = dynamic_stop_loss(buy_p, atr_val)
+        sell_p = dynamic_take_profit(buy_p, atr_val, strategy_target=sell_p)
+
+        # 仓位计算
+        est_score = 75 if trend == "上升" else (65 if db else 55)
+        position_amount, position_pct = score_to_position(est_score, 3000)
 
         return {"code": code, "latest_price": latest, "ma5": ma5v, "ma20": ma20v, "ma60": ma60v,
                 "high_60": high_60, "low_60": low_60, "position_60": pos, "trend": trend,
+                "atr": atr_val,
                 "fund_flow": fund,
                 "double_bottom": {"found": db is not None, "low_1": db["low_1"] if db else None,
                                   "low_2": db["low_2"] if db else None,
                                   "days_between": db["days_between"] if db else None,
                                   "volume_shrink": round(db["volume_shrink"] * 100, 1) if db else None},
                 "strategies": strategies,
+                "position": {"amount": int(position_amount), "pct": int(position_pct * 100)},
                 "advice": {"action": action, "buy_price": buy_p, "sell_price": sell_p, "stop_price": stop_loss}}
     except Exception as e:
         return {"error": str(e)}
