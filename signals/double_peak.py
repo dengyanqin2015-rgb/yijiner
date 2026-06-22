@@ -50,21 +50,18 @@ def find_double_bottom(kline: pd.DataFrame) -> dict | None:
         i2, low2 = recent_lows[j + 1]
         days_apart = i2 - i1
 
-        # 双底条件
-        if days_apart < 5 or days_apart > 40:
+        # 双底条件（放宽）
+        if days_apart < 3 or days_apart > 60:
             continue
-        if abs(low1 - low2) / max(low1, low2) > 0.05:  # 两底价格差<5%
+        if abs(low1 - low2) / max(low1, low2) > 0.08:  # 两底价格差<8%
             continue
-        if low2 < low1:  # 第2底不低于第1底太多
-            if (low1 - low2) / low1 > 0.02:
-                continue
 
         # 缩量确认
         vol_1 = volume[max(0, i1-2):i1+3].mean()
         vol_2 = volume[max(0, i2-2):i2+3].mean()
         shrink = vol_2 / vol_1 if vol_1 > 0 else 1
 
-        if shrink > 0.85:  # 第二个底必须缩量
+        if shrink > 0.90:  # 第二个底必须缩量（放宽到90%）
             continue
 
         return {"low_1": low1, "low_2": low2, "idx_1": i1, "idx_2": i2,
@@ -97,7 +94,7 @@ def scan(capital: float = 3000.0) -> list[DipPick]:
 
     picks = []
 
-    for _, row in spot.head(300).iterrows():
+    for _, row in spot.head(800).iterrows():
         code = row["代码"]
         name = str(row["名称"])
         price = float(row["最新价"])

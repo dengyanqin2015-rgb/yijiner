@@ -4,8 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>一进二</title>
-<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
-<script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"><\/script>');}</script>
+<script>
+// 多CDN容错加载ECharts
+(function(){
+  var cdns=[
+    'https://lib.baomitu.com/echarts/5.5.0/echarts.min.js',
+    'https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js',
+    'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'
+  ];
+  var s=document.createElement('script');
+  function tryCDN(i){if(i>=cdns.length)return;s.src=cdns[i];s.onerror=function(){tryCDN(i+1);};s.onload=function(){console.log('ECharts loaded from CDN '+i);};document.head.appendChild(s);}
+  tryCDN(0);
+})();
+</script>
 <style>
 :root{--bg:#0a0e14;--card:#131820;--bdr:#1e2836;--gold:#f0c060;--green:#26a65b;--red:#e74c3c;--blue:#5dade2;--text:#c8cdd3;--dim:#6b7280}
 *{margin:0;padding:0;box-sizing:border-box}
