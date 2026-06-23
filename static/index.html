@@ -256,10 +256,10 @@ async function loadChart(code,days){
     yAxis:[{scale:true,gridIndex:0,axisLabel:{fontSize:8,color:'#6b7280'},splitLine:{lineStyle:{color:'#1e2836'}}},{gridIndex:1,axisLabel:{fontSize:8,color:'#6b7280'},splitLine:{show:false}}],
     series:[
       {type:'candlestick',data:candleData,itemStyle:{color:'#e74c3c',color0:'#26a65b',borderColor:'#e74c3c',borderColor0:'#26a65b'},xAxisIndex:0,yAxisIndex:0},
-      {type:'line',data:d.ma5||[],smooth:true,lineStyle:{width:1,color:'#fff'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
-      {type:'line',data:d.ma10||[],smooth:true,lineStyle:{width:1,color:'#f0c060'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
-      {type:'line',data:d.ma20||[],smooth:true,lineStyle:{width:1,color:'#da70d6'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
-      {type:'line',data:d.ma60||[],smooth:true,lineStyle:{width:1,color:'#26a65b'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
+      {type:'line',data:d.ma5||[],smooth:true,connectNulls:true,lineStyle:{width:1,color:'#fff'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
+      {type:'line',data:d.ma10||[],smooth:true,connectNulls:true,lineStyle:{width:1,color:'#f0c060'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
+      {type:'line',data:d.ma20||[],smooth:true,connectNulls:true,lineStyle:{width:1,color:'#da70d6'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
+      {type:'line',data:d.ma60||[],smooth:true,connectNulls:true,lineStyle:{width:1,color:'#26a65b'},symbol:'none',xAxisIndex:0,yAxisIndex:0},
       {type:'bar',data:vols,itemStyle:{color:params=>up(params.dataIndex)?'#26a65b44':'#e74c3c44',borderColor:params=>up(params.dataIndex)?'#26a65b':'#e74c3c',borderWidth:1},xAxisIndex:1,yAxisIndex:1}
     ],
     tooltip:{trigger:'axis',axisPointer:{type:'cross'}}
