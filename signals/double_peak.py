@@ -94,7 +94,7 @@ def scan(capital: float = 3000.0) -> list[DipPick]:
 
     # 粗筛：优先低涨幅+低换手（可能是筑底形态）
     spot["rank"] = spot["涨跌幅"].rank() * 0.5 + spot["换手率"].rank() * 0.5
-    candidates = spot.sort_values("rank").head(80)  # 只查150只
+    candidates = spot.sort_values("rank").head(50)  # 50只=约60秒  # 只查150只
 
     picks = []
     for _, row in candidates.iterrows():
@@ -103,15 +103,17 @@ def scan(capital: float = 3000.0) -> list[DipPick]:
         price = float(row["最新价"])
 
         try:
-            kline = ak.stock_zh_a_hist(symbol=code, period="daily",
-                                        start_date=(datetime.now() - timedelta(days=90)).strftime("%Y%m%d"),
-                                        end_date=datetime.now().strftime("%Y%m%d"), adjust="qfq")
-            if kline.empty or len(kline) < 30:
+            prefix = "sh" if code.startswith("6") else "sz"
+            raw = ak.stock_zh_a_daily(symbol=f"{prefix}{code}",
+                                       start_date=(datetime.now() - timedelta(days=90)).strftime("%Y%m%d"),
+                                       end_date=datetime.now().strftime("%Y%m%d"), adjust="qfq")
+            if raw.empty or len(raw) < 30:
                 continue
+            kline = raw.rename(columns={"date":"日期","open":"开盘","close":"收盘","high":"最高","low":"最低","volume":"成交量"})
         except Exception:
             continue
 
-        _time.sleep(0.3)
+        _time.sleep(1.0)  # Sina限流严，必须间隔1秒
 
         result = find_double_bottom(kline)
         close_arr = kline["收盘"].values.astype(float)
