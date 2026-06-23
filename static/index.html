@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>一进二</title>
 <script>
-// 多CDN容错加载ECharts
-(function(){
-  var cdns=[
-    'https://lib.baomitu.com/echarts/5.5.0/echarts.min.js',
-    'https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js',
-    'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'
-  ];
+var echartsLoaded=false;
+(function loadECharts(i){
+  if(i>=3){console.log('ECharts all CDN failed');return}
+  var cdns=['https://lib.baomitu.com/echarts/5.5.0/echarts.min.js',
+            'https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js',
+            'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'];
   var s=document.createElement('script');
-  function tryCDN(i){if(i>=cdns.length)return;s.src=cdns[i];s.onerror=function(){tryCDN(i+1);};s.onload=function(){console.log('ECharts loaded from CDN '+i);};document.head.appendChild(s);}
-  tryCDN(0);
-})();
+  s.src=cdns[i];s.onload=function(){echartsLoaded=true;console.log('ECharts OK CDN:'+i)};
+  s.onerror=function(){loadECharts(i+1)};
+  document.head.appendChild(s);
+})(0);
 </script>
 <style>
 :root{--bg:#0a0e14;--card:#131820;--bdr:#1e2836;--gold:#f0c060;--green:#26a65b;--red:#e74c3c;--blue:#5dade2;--text:#c8cdd3;--dim:#6b7280}
@@ -159,15 +159,17 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 const API='';let curStrat='yijiner',selectedCode=null,chartInst=null,curPeriod=60,mobileTab='picks';
 
 // ====== 顶部状态 ======
+async function refreshAll(){loadTopBar();loadPicks(curStrat);loadHoldingsBar();}
 async function loadTopBar(){
-  const d=await get('/api/market');if(d.error)return;
+  const d=await get('/api/market');if(d.error){document.getElementById('topbar').innerHTML='数据加载失败 <button class="btn-sm primary" onclick="refreshAll()">重试</button>';return;}
   const sh=d.sh||{},sz=d.sz||{};
   document.getElementById('topbar').innerHTML=`
     <span class="idx ${sh.pct>=0?'up':'dn'}">上证 ${sh.price||'--'} ${(sh.pct||0)>=0?'+':''}${sh.pct||0}%</span>
     <span class="idx ${sz.pct>=0?'up':'dn'}">深证 ${sz.price||'--'} ${(sz.pct||0)>=0?'+':''}${sz.pct||0}%</span>
     <span>涨停<b>${d.total_zt||0}</b> 炸板${d.break_rate||0}% 溢价${(d.prev_premium||0)>=0?'+':''}${d.prev_premium}%</span>
     <span class="state ${d.state_color||'yellow'}"><span class="dot ${d.state_color||'yellow'}"></span>${d.state||'--'}</span>
-    <span style="margin-left:auto;font-size:10px;color:var(--dim)">${d.time||''}</span>`;
+    <span style="margin-left:auto;font-size:10px;color:var(--dim)">${d.time||''}</span>
+    <button class="btn-sm primary" onclick="refreshAll()" style="font-size:10px">刷新</button>`;
 }
 async function get(p){try{const r=await fetch(API+p);return r.json();}catch(e){return{error:1}}}
 
@@ -233,12 +235,13 @@ async function selectPick(code,idx){
 
 async function loadChart(code,days){
   curPeriod=days;
-  const periods=[1,5,30,60,120,250];
-  document.getElementById('periods').innerHTML=periods.map(d=>`<button class="${curPeriod===d?'on':''}" onclick="loadChart('${code}',${d})">${d===250?'年':d+'日'}</button>`).join('');
+  var periods=[1,5,30,60,120,250];
+  document.getElementById('periods').innerHTML=periods.map(function(d){return '<button class="'+(curPeriod===d?'on':'')+'" onclick="loadChart(\''+code+'\','+d+')">'+(d===250?'年':d+'日')+'</button>';}).join('');
 
-  const d=await get(`/api/chart/${code}?days=${days}`);
-  const container=document.getElementById('chart-container');
-  if(d.error||!d.ohlc){container.innerHTML='<div class="empty">数据加载中...</div>';return}
+  var container=document.getElementById('chart-container');
+  if(!echartsLoaded){container.innerHTML='<div class="empty">图表组件加载中...</div>';return}
+  var d=await get('/api/chart/'+code+'?days='+days);
+  if(d.error||!d.ohlc){container.innerHTML='<div class="empty">K线数据加载中...</div>';return}
   if(chartInst)chartInst.dispose();
   chartInst=echarts.init(container);
 
@@ -343,8 +346,7 @@ function showMobileTab(tab){
 
 // ====== 启动 ======
 loadTopBar();loadPicks('yijiner');loadHoldingsBar();
-setInterval(loadTopBar,60000);
-setInterval(()=>{loadPicks(curStrat);loadHoldingsBar()},60000);
+setInterval(refreshAll,30000);
 
 // 窗口大小变化时重绘
 window.addEventListener('resize',()=>{if(chartInst&&selectedCode)chartInst.resize()});
