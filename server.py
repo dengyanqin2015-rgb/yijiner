@@ -23,7 +23,7 @@ TRADES_FILE = DATA_DIR / "trades.json"
 WATCHLIST_FILE = DATA_DIR / "watchlist.json"
 WEBHOOK_URL_FILE = DATA_DIR / "webhook_url.txt"
 ALERTS_FILE = DATA_DIR / "alerts.json"
-CACHE_TTL = 30  # 缓存30秒
+CACHE_TTL = 120  # 缓存2分钟，避免重复计算
 
 # ===================== 工具函数 =====================
 
@@ -613,6 +613,17 @@ async def startup():
     if not _scheduled_started:
         _scheduled_started = True
         threading.Thread(target=_scheduled_push, daemon=True).start()
+        # 启动时预加载缓存
+        threading.Thread(target=_preload_cache, daemon=True).start()
+
+def _preload_cache():
+    """启动时预加载市场+池数据"""
+    import time as _t
+    _t.sleep(5)  # 等服务完全就绪
+    try:
+        _mcache["market"] = (_fetch_market(), _t.time())
+        _mcache["pool_yijiner"] = (_fetch_pool_yijiner(), _t.time())
+    except: pass
 
 
 if __name__ == "__main__":

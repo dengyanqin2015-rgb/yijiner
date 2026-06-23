@@ -345,8 +345,10 @@ function showMobileTab(tab){
 }
 
 // ====== 启动 ======
-loadTopBar();loadPicks('yijiner');loadHoldingsBar();
-setInterval(refreshAll,30000);
+loadTopBar();loadHoldingsBar();
+// 不自动加载股票池，太快被限流。点按钮手动加载。
+document.getElementById('picks-list').innerHTML='<div class="empty" style="padding:20px"><button class="btn-sm primary" onclick="loadPicks(\"yijiner\")" style="font-size:15px;padding:12px 24px">加载一进二精选</button><br><br><button class="btn-sm" onclick="loadPicks(\"dp\")" style="font-size:13px;padding:8px 16px">加载双峰抄底</button></div>';
+setInterval(refreshAll,120000);
 
 // 窗口大小变化时重绘
 window.addEventListener('resize',()=>{if(chartInst&&selectedCode)chartInst.resize()});
